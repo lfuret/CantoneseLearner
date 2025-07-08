@@ -1,1 +1,22 @@
-{}
+{
+  "c43bc13b28cc": {
+    "user_id": "c43bc13b28cc",
+    "username": "lfuret",
+    "email": "nihongoo@hotmail.fr",
+    "created_at": "2025-07-08T20:57:02.318935",
+    "last_login": "2025-07-08T20:59:53.989890",
+    "analysis_history": [],
+    "preferences": {
+      "preferred_analysis_type": "both",
+      "min_frequency": 1,
+      "max_chars_display": 50,
+      "show_chart_type": "bar chart"
+    },
+    "statistics": {
+      "total_analyses": 0,
+      "total_characters_analyzed": 0,
+      "total_words_analyzed": 0,
+      "files_processed": 0
+    }
+  }
+}
