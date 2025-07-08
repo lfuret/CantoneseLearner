@@ -1,8 +1,8 @@
-# Cantonese Learning Tool - Han Character Frequency Analysis
+# Cantonese Learning Tool - Han Character & Word Frequency Analysis
 
 ## Overview
 
-This is a Streamlit-based web application designed for Cantonese language learners to analyze Han character frequency in documents. The tool supports multiple file formats (PDF, EPUB, TXT) and provides statistical analysis and visualization of character usage patterns to help users focus their learning efforts on the most commonly used characters.
+This is a Streamlit-based web application designed for Cantonese language learners to analyze both Han character and word frequency in documents. The tool supports multiple file formats (PDF, EPUB, TXT) and provides statistical analysis and visualization of character and word usage patterns to help users focus their learning efforts on the most commonly used elements.
 
 ## System Architecture
 
@@ -40,6 +40,16 @@ The application follows a modular, single-page web application architecture with
   - Text cleaning and normalization
 - **Output**: Structured dictionary with analysis results
 
+### 4. Word Analyzer Module (`word_analyzer.py`)
+- **Purpose**: Analyzes text for word frequency using Chinese word segmentation
+- **Segmentation Engine**: Jieba Chinese word segmentation library
+- **Analysis Features**:
+  - Word frequency counting with focus on Han character words
+  - Word length distribution analysis
+  - Word difficulty categorization
+  - Statistics on total words, unique words, and Han words
+- **Output**: Structured dictionary with word analysis results
+
 ## Data Flow
 
 1. **File Upload**: User uploads document through Streamlit interface
@@ -56,6 +66,7 @@ The application follows a modular, single-page web application architecture with
 - **Pandas**: Data manipulation and analysis
 - **Plotly**: Interactive data visualization (Express and Graph Objects)
 - **PyPDF2**: PDF text extraction
+- **Jieba**: Chinese word segmentation and natural language processing
 
 ### Python Standard Library
 - **collections.Counter**: Character frequency counting
@@ -81,3 +92,4 @@ Preferred communication style: Simple, everyday language.
 
 Changelog:
 - July 08, 2025. Initial setup
+- July 08, 2025. Added Chinese word segmentation analysis using Jieba library alongside existing character analysis
