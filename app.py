@@ -11,8 +11,10 @@ from file_parsers import FileParser
 from character_analyzer import CharacterAnalyzer
 from word_analyzer import WordAnalyzer
 from pronunciation_analyzer import PronunciationAnalyzer
-from user_database import UserDatabase
+from mongodb_user_database import UserDatabase
+from mongodb_config import ensure_indexes
 from analysis_page import main_analysis_page
+from database_status_page import main_database_page
 
 # Configure page
 st.set_page_config(
@@ -139,6 +141,9 @@ def user_authentication():
 
 def main():
     """Main application function."""
+    # Initialize MongoDB indexes
+    ensure_indexes()
+    
     # Handle user authentication first
     if not user_authentication():
         return
@@ -162,6 +167,14 @@ def main():
         show_user_progress(user_data, db)
         if st.button("← Back to Analysis"):
             st.session_state.show_progress = False
+            st.rerun()
+        return
+    
+    # Show database management if requested
+    if st.session_state.get('show_database', False):
+        main_database_page()
+        if st.button("← Back to Analysis"):
+            st.session_state.show_database = False
             st.rerun()
         return
     

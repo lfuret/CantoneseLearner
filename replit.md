@@ -10,10 +10,11 @@ The application follows a modular, single-page web application architecture with
 
 - **Frontend**: Streamlit-based web interface providing interactive file upload, analysis controls, and data visualization
 - **Backend**: Python-based processing modules for file parsing, character analysis, and user management
-- **Database**: JSON-based NoSQL database for user authentication and progress tracking
+- **Database**: MongoDB with automatic JSON fallback for development environments
 - **Architecture Pattern**: Modular separation of concerns with dedicated classes for file parsing, character analysis, and user management
 - **Authentication**: Simple username-based authentication with user progress tracking
-- **Deployment**: Designed for single-instance deployment (suitable for Replit environment)
+- **Deployment**: Designed for single-instance deployment with cloud database support (suitable for Replit environment)
+- **Data Persistence**: Hybrid storage system ensuring functionality in both production (MongoDB) and development (JSON) environments
 
 ## Key Components
 
@@ -151,6 +152,8 @@ Preferred communication style: Simple, everyday language.
 - July 08, 2025: Added file reload capability for previously analyzed documents
 - July 08, 2025: Implemented duplicate file detection and comparison features
 - July 08, 2025: Added re-analysis functionality for stored files with content preservation
+- July 08, 2025: Migrated from JSON-only storage to MongoDB with JSON fallback for development
+- July 08, 2025: Added database management interface with migration tools and performance monitoring
 
 ## Changelog
 

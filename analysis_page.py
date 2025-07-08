@@ -15,9 +15,9 @@ from file_parsers import FileParser
 from character_analyzer import CharacterAnalyzer
 from word_analyzer import WordAnalyzer
 from pronunciation_analyzer import PronunciationAnalyzer
-from user_database import UserDatabase
-from file_tracker import FileTracker
-from learning_tracker import LearningTracker
+from mongodb_user_database import UserDatabase
+from mongodb_file_tracker import FileTracker
+from mongodb_learning_tracker import LearningTracker
 
 
 def display_analysis_header(user_data):
@@ -32,12 +32,16 @@ def display_analysis_header(user_data):
         st.markdown(f"**Welcome, {user_data['username']}!**")
         
     with col3:
-        col3a, col3b = st.columns(2)
+        col3a, col3b, col3c = st.columns(3)
         with col3a:
             if st.button("📊 Progress", use_container_width=True):
                 st.session_state.show_progress = True
                 st.rerun()
         with col3b:
+            if st.button("🗄️ Database", use_container_width=True):
+                st.session_state.show_database = True
+                st.rerun()
+        with col3c:
             if st.button("🚪 Sign Out", use_container_width=True):
                 st.session_state.current_user = None
                 st.rerun()
