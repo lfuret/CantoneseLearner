@@ -9,8 +9,10 @@ This is a Streamlit-based web application designed for Cantonese language learne
 The application follows a modular, single-page web application architecture with the following key characteristics:
 
 - **Frontend**: Streamlit-based web interface providing interactive file upload, analysis controls, and data visualization
-- **Backend**: Python-based processing modules for file parsing and character analysis
-- **Architecture Pattern**: Modular separation of concerns with dedicated classes for file parsing and character analysis
+- **Backend**: Python-based processing modules for file parsing, character analysis, and user management
+- **Database**: JSON-based NoSQL database for user authentication and progress tracking
+- **Architecture Pattern**: Modular separation of concerns with dedicated classes for file parsing, character analysis, and user management
+- **Authentication**: Simple username-based authentication with user progress tracking
 - **Deployment**: Designed for single-instance deployment (suitable for Replit environment)
 
 ## Key Components
@@ -60,14 +62,28 @@ The application follows a modular, single-page web application architecture with
   - Tone distribution analysis
 - **Output**: Structured dictionary with pronunciation data for characters and words
 
+### 6. User Database Module (`user_database.py`)
+- **Purpose**: Manages user authentication, preferences, and progress tracking
+- **Storage**: JSON-based NoSQL database for simplicity and portability
+- **User Management Features**:
+  - User account creation and authentication
+  - Analysis history tracking (last 50 analyses per user)
+  - User preferences persistence (analysis settings)
+  - Progress statistics (total analyses, characters/words processed)
+  - User session management
+- **Data Structure**: Hierarchical JSON with user profiles and analysis records
+
 ## Data Flow
 
-1. **File Upload**: User uploads document through Streamlit interface
-2. **Format Detection**: System identifies file type via MIME type or extension
-3. **Text Extraction**: FileParser extracts plain text from uploaded document
-4. **Character Analysis**: CharacterAnalyzer processes text for Han character statistics
-5. **Visualization**: Results displayed through Plotly charts and Streamlit components
-6. **Session Persistence**: Analysis results stored in Streamlit session state
+1. **User Authentication**: User signs in or creates account through authentication interface
+2. **Preference Loading**: System loads user's saved analysis preferences
+3. **File Upload**: User uploads document through Streamlit interface
+4. **Format Detection**: System identifies file type via MIME type or extension
+5. **Text Extraction**: FileParser extracts plain text from uploaded document
+6. **Character & Word Analysis**: Analyzers process text for statistics and pronunciation
+7. **Progress Saving**: Analysis results automatically saved to user's history
+8. **Visualization**: Results displayed through Plotly charts and Streamlit components
+9. **Session Persistence**: Analysis results and user state maintained across interactions
 
 ## External Dependencies
 
@@ -104,6 +120,9 @@ Preferred communication style: Simple, everyday language.
 - July 08, 2025: Successfully migrated from Replit Agent to Replit environment
 - July 08, 2025: Configured Streamlit server settings for proper deployment (port 5000, headless mode)
 - July 08, 2025: Installed all required dependencies and verified application functionality
+- July 08, 2025: Added user authentication and progress tracking system with JSON-based NoSQL database
+- July 08, 2025: Implemented user preferences persistence and analysis history tracking
+- July 08, 2025: Enhanced UI with progress dashboard and user session management
 
 ## Changelog
 

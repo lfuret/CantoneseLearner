@@ -11,6 +11,7 @@ from file_parsers import FileParser
 from character_analyzer import CharacterAnalyzer
 from word_analyzer import WordAnalyzer
 from pronunciation_analyzer import PronunciationAnalyzer
+from user_database import UserDatabase
 
 # Configure page
 st.set_page_config(
@@ -382,11 +383,144 @@ Top {len(top_words)} Most Frequent Words:
                 mime="text/csv"
             )
 
+def show_user_progress(user_data, db):
+    """Display user progress dashboard."""
+    st.header(f"📊 Progress Dashboard - {user_data['username']}")
+    
+    # User statistics
+    stats = db.get_user_statistics(user_data['user_id'])
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Analyses", stats.get('total_analyses', 0))
+    with col2:
+        st.metric("Files Processed", stats.get('files_processed', 0))
+    with col3:
+        st.metric("Characters Analyzed", f"{stats.get('total_characters_analyzed', 0):,}")
+    with col4:
+        st.metric("Words Analyzed", f"{stats.get('total_words_analyzed', 0):,}")
+    
+    # Recent activity
+    st.subheader("📈 Recent Analysis History")
+    history = db.get_user_history(user_data['user_id'], limit=10)
+    
+    if history:
+        history_df = pd.DataFrame([
+            {
+                'Date': record['timestamp'][:10],
+                'Time': record['timestamp'][11:19],
+                'File': record['filename'],
+                'Type': record['analysis_type'],
+                'Characters': record['character_stats'].get('total_chars', 'N/A'),
+                'Words': record['word_stats'].get('total_words', 'N/A')
+            }
+            for record in history
+        ])
+        st.dataframe(history_df, use_container_width=True)
+        
+        # Analysis trends chart
+        if len(history) > 1:
+            st.subheader("📊 Analysis Trends")
+            chart_data = pd.DataFrame([
+                {
+                    'Date': record['timestamp'][:10],
+                    'Characters': record['character_stats'].get('total_chars', 0),
+                    'Words': record['word_stats'].get('total_words', 0)
+                }
+                for record in reversed(history)
+            ])
+            
+            fig = px.line(chart_data, x='Date', y=['Characters', 'Words'], 
+                         title="Characters and Words Analyzed Over Time")
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("No analysis history yet. Start by uploading a document!")
+    
+    # User preferences section
+    st.subheader("⚙️ Your Preferences")
+    prefs = db.get_user_preferences(user_data['user_id'])
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"**Preferred Analysis Type:** {prefs.get('preferred_analysis_type', 'both').title()}")
+        st.write(f"**Minimum Frequency:** {prefs.get('min_frequency', 1)}")
+    with col2:
+        st.write(f"**Max Items Display:** {prefs.get('max_chars_display', 50)}")
+        st.write(f"**Chart Type:** {prefs.get('show_chart_type', 'bar').title()}")
+
+def user_authentication():
+    """Handle user authentication and registration."""
+    db = UserDatabase()
+    
+    if 'current_user' not in st.session_state:
+        st.session_state.current_user = None
+    
+    if st.session_state.current_user is None:
+        st.title("🈯 Welcome to Cantonese Learning Tool")
+        st.markdown("**Please sign in or create an account to track your progress**")
+        
+        tab1, tab2 = st.tabs(["Sign In", "Create Account"])
+        
+        with tab1:
+            st.subheader("Sign In")
+            username = st.text_input("Username", key="signin_username")
+            if st.button("Sign In", key="signin_button"):
+                if username:
+                    user_data = db.get_user_by_username(username)
+                    if user_data:
+                        st.session_state.current_user = user_data
+                        db.update_last_login(user_data['user_id'])
+                        st.success(f"Welcome back, {username}!")
+                        st.rerun()
+                    else:
+                        st.error("Username not found. Please create an account first.")
+                else:
+                    st.error("Please enter a username.")
+        
+        with tab2:
+            st.subheader("Create New Account")
+            new_username = st.text_input("Choose Username", key="new_username")
+            new_email = st.text_input("Email (optional)", key="new_email")
+            if st.button("Create Account", key="create_button"):
+                if new_username:
+                    try:
+                        user_id = db.create_user(new_username, new_email)
+                        user_data = db.get_user(user_id)
+                        st.session_state.current_user = user_data
+                        st.success(f"Account created successfully! Welcome, {new_username}!")
+                        st.rerun()
+                    except ValueError as e:
+                        st.error(str(e))
+                else:
+                    st.error("Please enter a username.")
+        
+        return False
+    
+    return True
+
 def main():
-    # Header
-    st.title("🈯 Cantonese Learning Tool")
-    st.markdown("### Han Character & Word Frequency Analysis")
-    st.markdown("Upload documents in various formats to analyze Han character and word frequency to improve your Cantonese learning experience.")
+    """Main application function."""
+    # Handle user authentication first
+    if not user_authentication():
+        return
+    
+    # User is authenticated, show main app
+    user_data = st.session_state.current_user
+    db = UserDatabase()
+    
+    # Header with user info
+    col1, col2, col3 = st.columns([2, 1, 1])
+    with col1:
+        st.title("🈯 Cantonese Learning Tool")
+        st.markdown("**Han Character & Word Frequency Analysis for Language Learners**")
+    with col2:
+        st.markdown(f"**Welcome, {user_data['username']}!**")
+    with col3:
+        if st.button("📊 View Progress"):
+            st.session_state.show_progress = True
+        if st.button("Sign Out"):
+            st.session_state.current_user = None
+            st.rerun()
     
     # Initialize session state
     if 'analysis_results' not in st.session_state:
@@ -397,6 +531,19 @@ def main():
         st.session_state.pronunciation_data = None
     if 'uploaded_filename' not in st.session_state:
         st.session_state.uploaded_filename = None
+    if 'show_progress' not in st.session_state:
+        st.session_state.show_progress = False
+    
+    # Load user preferences
+    user_prefs = db.get_user_preferences(user_data['user_id'])
+    
+    # Show progress dashboard if requested
+    if st.session_state.show_progress:
+        show_user_progress(user_data, db)
+        if st.button("← Back to Analysis"):
+            st.session_state.show_progress = False
+            st.rerun()
+        return
     
     # Sidebar for file upload and settings
     with st.sidebar:
@@ -414,13 +561,13 @@ def main():
             "Minimum character frequency",
             min_value=1,
             max_value=50,
-            value=5,
+            value=user_prefs.get('min_frequency', 5),
             help="Only show characters that appear at least this many times"
         )
         
         show_all_results = st.checkbox(
             "Show all results",
-            value=True,
+            value=user_prefs.get('max_chars_display') is None,
             help="Show all characters/words or limit to top 50"
         )
         
@@ -429,7 +576,7 @@ def main():
                 "Maximum items to display",
                 min_value=10,
                 max_value=200,
-                value=50,
+                value=user_prefs.get('max_chars_display', 50),
                 help="Limit the number of items shown in results"
             )
         else:
@@ -438,14 +585,27 @@ def main():
         show_chart_type = st.selectbox(
             "Chart type",
             ["Bar Chart", "Pie Chart", "Treemap"],
+            index=["Bar Chart", "Pie Chart", "Treemap"].index(user_prefs.get('show_chart_type', 'Bar Chart').title()),
             help="Choose how to visualize the frequency data"
         )
         
         analysis_type = st.selectbox(
             "Analysis type",
             ["Characters", "Words", "Both"],
+            index=["Characters", "Words", "Both"].index(user_prefs.get('preferred_analysis_type', 'Both').title()),
             help="Choose to analyze characters, words, or both"
         )
+        
+        # Save preferences when changed
+        current_prefs = {
+            'preferred_analysis_type': analysis_type.lower(),
+            'min_frequency': min_frequency,
+            'max_chars_display': max_chars_display,
+            'show_chart_type': show_chart_type.lower()
+        }
+        
+        if current_prefs != user_prefs:
+            db.update_user_preferences(user_data['user_id'], current_prefs)
     
     # Main content area
     if uploaded_file is not None:
@@ -497,6 +657,22 @@ def main():
                             'characters': character_pronunciations,
                             'words': word_pronunciations
                         }
+                        
+                        # Save analysis results to user database
+                        analysis_data = {
+                            'filename': uploaded_file.name,
+                            'file_size': uploaded_file.size,
+                            'analysis_type': analysis_type.lower(),
+                            'character_stats': analysis_results,
+                            'word_stats': word_analysis_results,
+                            'top_characters': dict(analysis_results['character_frequency'].most_common(10)),
+                            'top_words': dict(word_analysis_results['han_words'].most_common(10)),
+                            'settings_used': current_prefs
+                        }
+                        
+                        db.save_analysis_result(user_data['user_id'], analysis_data)
+                        
+                        st.success(f"✅ Analysis complete! Results saved to your progress.")
                         
                     finally:
                         # Clean up temporary file
