@@ -10,6 +10,7 @@ import os
 from file_parsers import FileParser
 from character_analyzer import CharacterAnalyzer
 from word_analyzer import WordAnalyzer
+from pronunciation_analyzer import PronunciationAnalyzer
 
 # Configure page
 st.set_page_config(
@@ -19,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-def display_character_analysis(results, min_frequency, max_chars_display, show_chart_type):
+def display_character_analysis(results, pronunciation_data, min_frequency, max_chars_display, show_chart_type):
     """Display character frequency analysis results."""
     # Filter results based on settings
     filtered_chars = {
@@ -51,10 +52,12 @@ def display_character_analysis(results, min_frequency, max_chars_display, show_c
     
     st.divider()
     
-    # Create visualization and table
-    display_frequency_chart_and_table(top_chars, results['total_chars'], show_chart_type, "Character", "Characters")
+    # Create visualization and table with pronunciation data
+    display_frequency_chart_and_table_with_pronunciation(
+        top_chars, pronunciation_data, results['total_chars'], show_chart_type, "Character", "Characters"
+    )
 
-def display_word_analysis(word_results, min_frequency, max_chars_display, show_chart_type):
+def display_word_analysis(word_results, pronunciation_data, min_frequency, max_chars_display, show_chart_type):
     """Display word frequency analysis results."""
     # Filter Han words based on settings
     filtered_words = {
@@ -86,21 +89,23 @@ def display_word_analysis(word_results, min_frequency, max_chars_display, show_c
     
     st.divider()
     
-    # Create visualization and table
-    display_frequency_chart_and_table(top_words, word_results['total_words'], show_chart_type, "Word", "Words")
+    # Create visualization and table with pronunciation data
+    display_frequency_chart_and_table_with_pronunciation(
+        top_words, pronunciation_data, word_results['total_words'], show_chart_type, "Word", "Words"
+    )
 
-def display_combined_analysis(char_results, word_results, min_frequency, max_chars_display, show_chart_type):
+def display_combined_analysis(char_results, word_results, pronunciation_data, min_frequency, max_chars_display, show_chart_type):
     """Display both character and word analysis results."""
     # Create tabs for different analysis types
     tab1, tab2 = st.tabs(["📝 Characters", "🔤 Words"])
     
     with tab1:
-        display_character_analysis(char_results, min_frequency, max_chars_display, show_chart_type)
+        display_character_analysis(char_results, pronunciation_data['characters'], min_frequency, max_chars_display, show_chart_type)
     
     with tab2:
-        display_word_analysis(word_results, min_frequency, max_chars_display, show_chart_type)
+        display_word_analysis(word_results, pronunciation_data['words'], min_frequency, max_chars_display, show_chart_type)
 
-def display_frequency_chart_and_table(top_items, total_count, show_chart_type, item_type, item_type_plural):
+def display_frequency_chart_and_table_with_pronunciation(top_items, pronunciation_data, total_count, show_chart_type, item_type, item_type_plural):
     """Display frequency chart and table for either characters or words."""
     # Create two columns for visualization and table
     col_chart, col_table = st.columns([2, 1])
@@ -153,12 +158,20 @@ def display_frequency_chart_and_table(top_items, total_count, show_chart_type, i
     with col_table:
         st.subheader("📋 Frequency Table")
         
-        # Create detailed table
+        # Create detailed table with pronunciation data
         table_data = []
         for item, freq in top_items.items():
             percentage = (freq / total_count) * 100
+            
+            # Get pronunciation data if available
+            if item in pronunciation_data:
+                jyutping = pronunciation_data[item]['jyutping']
+            else:
+                jyutping = "unknown"
+            
             table_data.append({
                 item_type: item,
+                'Jyutping': jyutping,
                 'Frequency': freq,
                 'Percentage': f"{percentage:.1f}%"
             })
@@ -173,7 +186,7 @@ def display_frequency_chart_and_table(top_items, total_count, show_chart_type, i
             hide_index=True
         )
 
-def display_download_section(char_results, word_results, analysis_type):
+def display_download_section(char_results, word_results, pronunciation_data, analysis_type):
     """Display download section with appropriate data based on analysis type."""
     st.divider()
     st.subheader("💾 Download Results")
@@ -185,9 +198,19 @@ def display_download_section(char_results, word_results, analysis_type):
         top_chars = dict(sorted(char_results['character_frequency'].items(), key=lambda x: x[1], reverse=True)[:50])
         
         with col_download1:
-            csv_data = pd.DataFrame(list(top_chars.items()), columns=['Character', 'Frequency'])
-            csv_data['Percentage'] = (csv_data['Frequency'] / char_results['total_chars'] * 100).round(1)
+            # Create CSV with pronunciation data
+            csv_data_list = []
+            for char, freq in top_chars.items():
+                jyutping = pronunciation_data['characters'].get(char, {}).get('jyutping', 'unknown')
+                percentage = (freq / char_results['total_chars'] * 100)
+                csv_data_list.append({
+                    'Character': char,
+                    'Jyutping': jyutping,
+                    'Frequency': freq,
+                    'Percentage': round(percentage, 1)
+                })
             
+            csv_data = pd.DataFrame(csv_data_list)
             csv_buffer = io.StringIO()
             csv_data.to_csv(csv_buffer, index=False, encoding='utf-8')
             
@@ -210,7 +233,8 @@ Top {len(top_chars)} Most Frequent Characters:
 """
             for i, (char, freq) in enumerate(top_chars.items(), 1):
                 percentage = (freq / char_results['total_chars']) * 100
-                summary_text += f"{i:3d}. {char} - {freq:4d} times ({percentage:5.1f}%)\n"
+                jyutping = pronunciation_data['characters'].get(char, {}).get('jyutping', 'unknown')
+                summary_text += f"{i:3d}. {char} ({jyutping}) - {freq:4d} times ({percentage:5.1f}%)\n"
             
             st.download_button(
                 label="📝 Download Character Summary",
@@ -224,9 +248,19 @@ Top {len(top_chars)} Most Frequent Characters:
         top_words = dict(sorted(word_results['han_words'].items(), key=lambda x: x[1], reverse=True)[:50])
         
         with col_download1:
-            csv_data = pd.DataFrame(list(top_words.items()), columns=['Word', 'Frequency'])
-            csv_data['Percentage'] = (csv_data['Frequency'] / word_results['total_words'] * 100).round(1)
+            # Create CSV with pronunciation data
+            csv_data_list = []
+            for word, freq in top_words.items():
+                jyutping = pronunciation_data['words'].get(word, {}).get('jyutping', 'unknown')
+                percentage = (freq / word_results['total_words'] * 100)
+                csv_data_list.append({
+                    'Word': word,
+                    'Jyutping': jyutping,
+                    'Frequency': freq,
+                    'Percentage': round(percentage, 1)
+                })
             
+            csv_data = pd.DataFrame(csv_data_list)
             csv_buffer = io.StringIO()
             csv_data.to_csv(csv_buffer, index=False, encoding='utf-8')
             
@@ -249,7 +283,8 @@ Top {len(top_words)} Most Frequent Words:
 """
             for i, (word, freq) in enumerate(top_words.items(), 1):
                 percentage = (freq / word_results['total_words']) * 100
-                summary_text += f"{i:3d}. {word} - {freq:4d} times ({percentage:5.1f}%)\n"
+                jyutping = pronunciation_data['words'].get(word, {}).get('jyutping', 'unknown')
+                summary_text += f"{i:3d}. {word} ({jyutping}) - {freq:4d} times ({percentage:5.1f}%)\n"
             
             st.download_button(
                 label="📝 Download Word Summary",
@@ -263,11 +298,20 @@ Top {len(top_words)} Most Frequent Words:
         col_download3, col_download4 = st.columns(2)
         
         with col_download1:
-            # Character CSV
+            # Character CSV with pronunciation
             top_chars = dict(sorted(char_results['character_frequency'].items(), key=lambda x: x[1], reverse=True)[:50])
-            csv_data = pd.DataFrame(list(top_chars.items()), columns=['Character', 'Frequency'])
-            csv_data['Percentage'] = (csv_data['Frequency'] / char_results['total_chars'] * 100).round(1)
+            csv_data_list = []
+            for char, freq in top_chars.items():
+                jyutping = pronunciation_data['characters'].get(char, {}).get('jyutping', 'unknown')
+                percentage = (freq / char_results['total_chars'] * 100)
+                csv_data_list.append({
+                    'Character': char,
+                    'Jyutping': jyutping,
+                    'Frequency': freq,
+                    'Percentage': round(percentage, 1)
+                })
             
+            csv_data = pd.DataFrame(csv_data_list)
             csv_buffer = io.StringIO()
             csv_data.to_csv(csv_buffer, index=False, encoding='utf-8')
             
@@ -279,11 +323,20 @@ Top {len(top_words)} Most Frequent Words:
             )
         
         with col_download2:
-            # Word CSV
+            # Word CSV with pronunciation
             top_words = dict(sorted(word_results['han_words'].items(), key=lambda x: x[1], reverse=True)[:50])
-            csv_data = pd.DataFrame(list(top_words.items()), columns=['Word', 'Frequency'])
-            csv_data['Percentage'] = (csv_data['Frequency'] / word_results['total_words'] * 100).round(1)
+            csv_data_list = []
+            for word, freq in top_words.items():
+                jyutping = pronunciation_data['words'].get(word, {}).get('jyutping', 'unknown')
+                percentage = (freq / word_results['total_words'] * 100)
+                csv_data_list.append({
+                    'Word': word,
+                    'Jyutping': jyutping,
+                    'Frequency': freq,
+                    'Percentage': round(percentage, 1)
+                })
             
+            csv_data = pd.DataFrame(csv_data_list)
             csv_buffer = io.StringIO()
             csv_data.to_csv(csv_buffer, index=False, encoding='utf-8')
             
@@ -305,6 +358,8 @@ def main():
         st.session_state.analysis_results = None
     if 'word_analysis_results' not in st.session_state:
         st.session_state.word_analysis_results = None
+    if 'pronunciation_data' not in st.session_state:
+        st.session_state.pronunciation_data = None
     if 'uploaded_filename' not in st.session_state:
         st.session_state.uploaded_filename = None
     
@@ -355,6 +410,7 @@ def main():
             st.session_state.uploaded_filename = uploaded_file.name
             st.session_state.analysis_results = None
             st.session_state.word_analysis_results = None
+            st.session_state.pronunciation_data = None
             
             with st.spinner(f"Processing {uploaded_file.name}..."):
                 try:
@@ -384,6 +440,20 @@ def main():
                         word_analysis_results = word_analyzer.analyze_text(text_content)
                         st.session_state.word_analysis_results = word_analysis_results
                         
+                        # Analyze pronunciations
+                        pronunciation_analyzer = PronunciationAnalyzer()
+                        character_pronunciations = pronunciation_analyzer.get_character_pronunciations(
+                            analysis_results['character_frequency']
+                        )
+                        word_pronunciations = pronunciation_analyzer.get_word_pronunciations(
+                            word_analysis_results['han_words']
+                        )
+                        
+                        st.session_state.pronunciation_data = {
+                            'characters': character_pronunciations,
+                            'words': word_pronunciations
+                        }
+                        
                     finally:
                         # Clean up temporary file
                         os.unlink(tmp_file_path)
@@ -393,25 +463,26 @@ def main():
                     return
     
     # Display results if available
-    if st.session_state.analysis_results and st.session_state.word_analysis_results:
+    if st.session_state.analysis_results and st.session_state.word_analysis_results and st.session_state.pronunciation_data:
         char_results = st.session_state.analysis_results
         word_results = st.session_state.word_analysis_results
+        pronunciation_data = st.session_state.pronunciation_data
         
         # Display different analysis types based on selection
         if analysis_type == "Characters":
-            display_character_analysis(char_results, min_frequency, max_chars_display, show_chart_type)
+            display_character_analysis(char_results, pronunciation_data['characters'], min_frequency, max_chars_display, show_chart_type)
         elif analysis_type == "Words":
-            display_word_analysis(word_results, min_frequency, max_chars_display, show_chart_type)
+            display_word_analysis(word_results, pronunciation_data['words'], min_frequency, max_chars_display, show_chart_type)
         else:  # Both
-            display_combined_analysis(char_results, word_results, min_frequency, max_chars_display, show_chart_type)
+            display_combined_analysis(char_results, word_results, pronunciation_data, min_frequency, max_chars_display, show_chart_type)
         
         
         # Download section
-        display_download_section(char_results, word_results, analysis_type)
+        display_download_section(char_results, word_results, pronunciation_data, analysis_type)
     
     else:
         # Welcome screen when no file is uploaded
-        st.info("👆 Please upload a file using the sidebar to begin Han character and word frequency analysis.")
+        st.info("👆 Please upload a file using the sidebar to begin Han character and word frequency analysis with Jyutping pronunciations.")
         
         # Instructions
         with st.expander("📖 How to use this tool", expanded=True):
@@ -428,13 +499,14 @@ def main():
             - **TXT**: Plain text files with UTF-8 encoding
             
             **Analysis types:**
-            - **Characters**: Analyze individual Han character frequency
-            - **Words**: Analyze word frequency using Chinese word segmentation
+            - **Characters**: Analyze individual Han character frequency with Jyutping pronunciations
+            - **Words**: Analyze word frequency using Chinese word segmentation with Jyutping pronunciations
             - **Both**: View both character and word analysis in separate tabs
             
             **Perfect for:**
-            - Analyzing Chinese text difficulty
+            - Analyzing Chinese text difficulty with pronunciation guides
             - Identifying common characters and words for study
+            - Learning proper Cantonese pronunciations (Jyutping)
             - Understanding frequency patterns in Chinese text
             - Preparing vocabulary lists for Cantonese learning
             """)

@@ -714,6 +714,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pycantonese"
+version = "3.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pylangacq" },
+    { name = "wordseg" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/44/28/4b0cbc503f0be6dd4c55306d85643a785f64cd733778a79d472c779eb491/pycantonese-3.4.0.tar.gz", hash = "sha256:8c0768bbfbc9862b9a149525edfd24dc34f380d5d654fae3597da3f0951a0752", size = 3831061 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/b8/bb21891cc1cc0466d15e211896b614c73b494434b837e326008b501851c0/pycantonese-3.4.0-py3-none-any.whl", hash = "sha256:2585ae8070cc6a3a32f1cf0fd395c93f10aa531272e5292c4d082215104d7958", size = 3903038 },
+]
+
+[[package]]
 name = "pycparser"
 version = "2.22"
 source = { registry = "https://pypi.org/simple" }
@@ -733,6 +746,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a1/ca/40e14e196864a0f61a92abb14d09b3d3da98f94ccb03b49cf51688140dab/pydeck-0.9.1.tar.gz", hash = "sha256:f74475ae637951d63f2ee58326757f8d4f9cd9f2a457cf42950715003e2cb605", size = 3832240 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ab/4c/b888e6cf58bd9db9c93f40d1c6be8283ff49d88919231afe93a6bcf61626/pydeck-0.9.1-py2.py3-none-any.whl", hash = "sha256:b3f75ba0d273fc917094fa61224f3f6076ca8752b93d46faf3bcfd9f9d59b038", size = 6900403 },
+]
+
+[[package]]
+name = "pylangacq"
+version = "0.16.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "tabulate", extra = ["widechars"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ef/9b/2ed966a4c1469c3c3526d1be1ddecec0716f6dcd40ea48aa4c14c3acdcdd/pylangacq-0.16.2.tar.gz", hash = "sha256:2f869657a54c0e8be2ff783f24b1f0f7c733bddd46157384697da0475acdadc8", size = 64709 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/1c/b2bb5cfc5704403ee258641210510b2bf423fd686e0fb584d5de8a89474c/pylangacq-0.16.2-py3-none-any.whl", hash = "sha256:01e707e5e1bdc1e7fbb93bc820bc8aefd05011daaaa3ad0973ee36042c2c6a27", size = 64474 },
 ]
 
 [[package]]
@@ -810,6 +837,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pdfplumber" },
     { name = "plotly" },
+    { name = "pycantonese" },
     { name = "pypdf2" },
     { name = "streamlit" },
 ]
@@ -822,6 +850,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.3.1" },
     { name = "pdfplumber", specifier = ">=0.11.7" },
     { name = "plotly", specifier = ">=6.2.0" },
+    { name = "pycantonese", specifier = ">=3.4.0" },
     { name = "pypdf2", specifier = ">=3.0.1" },
     { name = "streamlit", specifier = ">=1.46.1" },
 ]
@@ -990,6 +1019,20 @@ wheels = [
 ]
 
 [[package]]
+name = "tabulate"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/fe/802052aecb21e3797b8f7902564ab6ea0d60ff8ca23952079064155d1ae1/tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c", size = 81090 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f", size = 35252 },
+]
+
+[package.optional-dependencies]
+widechars = [
+    { name = "wcwidth" },
+]
+
+[[package]]
 name = "tenacity"
 version = "9.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1069,4 +1112,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/07/f6/d0e5b343768e8bcb4cda79f0f2f55051bf26177ecd5651f84c07567461cf/watchdog-6.0.0-py3-none-win32.whl", hash = "sha256:07df1fdd701c5d4c8e55ef6cf55b8f0120fe1aef7ef39a1c6fc6bc2e606d517a", size = 79065 },
     { url = "https://files.pythonhosted.org/packages/db/d9/c495884c6e548fce18a8f40568ff120bc3a4b7b99813081c8ac0c936fa64/watchdog-6.0.0-py3-none-win_amd64.whl", hash = "sha256:cbafb470cf848d93b5d013e2ecb245d4aa1c8fd0504e863ccefa32445359d680", size = 79070 },
     { url = "https://files.pythonhosted.org/packages/33/e8/e40370e6d74ddba47f002a32919d91310d6074130fe4e17dabcafc15cbf1/watchdog-6.0.0-py3-none-win_ia64.whl", hash = "sha256:a1914259fa9e1454315171103c6a30961236f508b9b623eae470268bbcc6a22f", size = 79067 },
+]
+
+[[package]]
+name = "wcwidth"
+version = "0.2.13"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6c/63/53559446a878410fc5a5974feb13d31d78d752eb18aeba59c7fef1af7598/wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5", size = 101301 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/84/fd2ba7aafacbad3c4201d395674fc6348826569da3c0937e75505ead3528/wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859", size = 34166 },
+]
+
+[[package]]
+name = "wordseg"
+version = "0.0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3e/a5/e5948fd098b5085b14830a9586d51b0f00c44a0717f06d7a9eb05511d847/wordseg-0.0.2.tar.gz", hash = "sha256:0e23afad01eaa36acb85524e1469a68f65d29bd41e1114cebfe39135e9e951d9", size = 7406 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/23/ceeb960b12098d8ca9d9a246f5ac2081b135574f406bf433593b5972f0ec/wordseg-0.0.2-py3-none-any.whl", hash = "sha256:488e73c193ed9e36e844fef41658217f7c10e36a1d0123304e85ff1232477235", size = 9522 },
 ]

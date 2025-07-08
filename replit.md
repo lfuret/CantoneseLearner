@@ -50,6 +50,16 @@ The application follows a modular, single-page web application architecture with
   - Statistics on total words, unique words, and Han words
 - **Output**: Structured dictionary with word analysis results
 
+### 5. Pronunciation Analyzer Module (`pronunciation_analyzer.py`)
+- **Purpose**: Provides Jyutping pronunciation analysis for Chinese characters and words
+- **Pronunciation Engine**: PyCantonese library for authentic Jyutping conversion
+- **Analysis Features**:
+  - Character-to-Jyutping pronunciation mapping
+  - Word-to-Jyutping pronunciation mapping
+  - Pronunciation availability tracking
+  - Tone distribution analysis
+- **Output**: Structured dictionary with pronunciation data for characters and words
+
 ## Data Flow
 
 1. **File Upload**: User uploads document through Streamlit interface
@@ -67,6 +77,7 @@ The application follows a modular, single-page web application architecture with
 - **Plotly**: Interactive data visualization (Express and Graph Objects)
 - **PyPDF2**: PDF text extraction
 - **Jieba**: Chinese word segmentation and natural language processing
+- **PyCantonese**: Jyutping pronunciation conversion and Cantonese linguistics
 
 ### Python Standard Library
 - **collections.Counter**: Character frequency counting
@@ -93,3 +104,4 @@ Preferred communication style: Simple, everyday language.
 Changelog:
 - July 08, 2025. Initial setup
 - July 08, 2025. Added Chinese word segmentation analysis using Jieba library alongside existing character analysis
+- July 08, 2025. Added Jyutping pronunciation support using PyCantonese library for both characters and words
