@@ -148,6 +148,9 @@ Preferred communication style: Simple, everyday language.
 - July 08, 2025: Fixed preference mapping issues and created cleaner UI layout with progress indicators
 - July 08, 2025: Added comprehensive file tracking and learning progress system
 - July 08, 2025: Implemented mastery-based learning recommendations and detailed exposure tracking
+- July 08, 2025: Added file reload capability for previously analyzed documents
+- July 08, 2025: Implemented duplicate file detection and comparison features
+- July 08, 2025: Added re-analysis functionality for stored files with content preservation
 
 ## Changelog
 

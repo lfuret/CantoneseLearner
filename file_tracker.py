@@ -83,6 +83,11 @@ class FileTracker:
         
         # Create new file record
         file_id = str(uuid.uuid4())[:12]
+        
+        # Store file content as base64 for re-analysis capability
+        import base64
+        file_content_b64 = base64.b64encode(file_content).decode('utf-8')
+        
         file_data = {
             'file_id': file_id,
             'filename': filename,
@@ -95,6 +100,7 @@ class FileTracker:
             'access_count': 1,
             'accessed_by': [user_id],
             'analysis_history': [],
+            'file_content': file_content_b64,  # Store for re-analysis
             'metadata': {
                 'original_filename': filename,
                 'upload_session': str(uuid.uuid4())[:8]
@@ -105,6 +111,20 @@ class FileTracker:
         self._save_data(data)
         
         return file_id
+    
+    def get_file_content(self, file_id: str) -> Optional[bytes]:
+        """Get the original file content for re-analysis."""
+        data = self._load_data()
+        file_data = data.get(file_id)
+        
+        if not file_data or 'file_content' not in file_data:
+            return None
+        
+        import base64
+        try:
+            return base64.b64decode(file_data['file_content'])
+        except Exception:
+            return None
     
     def add_analysis_record(self, file_id: str, user_id: str, analysis_results: Dict[str, Any]):
         """

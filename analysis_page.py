@@ -47,22 +47,95 @@ def display_file_upload_section():
     """Display the file upload section."""
     st.header("📁 Upload Document")
     
-    uploaded_file = st.file_uploader(
-        "Choose a file to analyze",
-        type=['pdf', 'epub', 'txt'],
-        help="Supported formats: PDF, EPUB, TXT files"
-    )
+    # Create tabs for new upload vs previous files
+    tab1, tab2 = st.tabs(["📤 New Upload", "📂 Previous Files"])
     
-    if uploaded_file:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("File Name", uploaded_file.name)
-        with col2:
-            st.metric("File Size", f"{uploaded_file.size:,} bytes")
-        with col3:
-            st.metric("File Type", uploaded_file.type or "Unknown")
+    with tab1:
+        uploaded_file = st.file_uploader(
+            "Choose a file to analyze",
+            type=['pdf', 'epub', 'txt'],
+            help="Supported formats: PDF, EPUB, TXT files"
+        )
+        
+        if uploaded_file:
+            # Check if file already exists
+            file_tracker = FileTracker()
+            file_content = uploaded_file.getvalue()
+            file_hash = file_tracker._generate_file_hash(file_content)
+            
+            # Check for existing file
+            data = file_tracker._load_data()
+            existing_file = None
+            for file_id, file_data in data.items():
+                if file_data.get('file_hash') == file_hash:
+                    existing_file = file_data
+                    break
+            
+            if existing_file:
+                st.warning(f"📋 This file has been analyzed before!")
+                st.info(f"**{existing_file['filename']}** was first uploaded on {existing_file['uploaded_at'][:10]} and has been analyzed {len(existing_file['analysis_history'])} times.")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🔄 Analyze Again", use_container_width=True):
+                        return uploaded_file
+                with col2:
+                    if st.button("📊 View Previous Analysis", use_container_width=True):
+                        st.session_state.reload_file_id = existing_file['file_id']
+                        st.session_state.reload_file_data = existing_file
+                        st.rerun()
+                return None
+            else:
+                # Show file details for new files
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("File Name", uploaded_file.name)
+                with col2:
+                    st.metric("File Size", f"{uploaded_file.size:,} bytes")
+                with col3:
+                    st.metric("File Type", uploaded_file.type or "Unknown")
+                return uploaded_file
     
-    return uploaded_file
+    with tab2:
+        if 'current_user' not in st.session_state:
+            st.info("Please sign in to view your previous files.")
+            return None
+        
+        user_data = st.session_state.current_user
+        file_tracker = FileTracker()
+        user_files = file_tracker.get_user_files(user_data['user_id'])
+        
+        if not user_files:
+            st.info("No previous files found. Upload a document to start building your analysis history.")
+            return None
+        
+        st.write("**Select a previously analyzed file:**")
+        
+        for file_data in user_files[:20]:  # Show last 20 files
+            with st.expander(f"📄 {file_data['filename']}", expanded=False):
+                col1, col2, col3 = st.columns([2, 1, 1])
+                
+                with col1:
+                    st.write(f"**Size:** {file_data['file_size']:,} bytes")
+                    st.write(f"**Type:** {file_data.get('file_type', 'Unknown')}")
+                    st.write(f"**Uploaded:** {file_data['uploaded_at'][:10]}")
+                
+                with col2:
+                    st.write(f"**Analyses:** {len(file_data['analysis_history'])}")
+                    st.write(f"**Last accessed:** {file_data['last_accessed'][:10]}")
+                
+                with col3:
+                    if st.button(f"📊 Reload", key=f"reload_{file_data['file_id']}", use_container_width=True):
+                        st.session_state.reload_file_id = file_data['file_id']
+                        st.session_state.reload_file_data = file_data
+                        st.rerun()
+                    
+                    if st.button(f"🔄 Re-analyze", key=f"reanalyze_{file_data['file_id']}", use_container_width=True):
+                        st.session_state.reanalyze_file_id = file_data['file_id']
+                        st.session_state.reanalyze_file_data = file_data
+                        st.rerun()
+    
+    return None
 
 
 def display_analysis_settings(user_prefs):
@@ -654,6 +727,242 @@ def display_frequency_table(data, pronunciation_data, item_type):
     )
 
 
+def handle_file_reload(file_id, file_data, user_data, db):
+    """Handle reloading a previously analyzed file."""
+    try:
+        file_tracker = FileTracker()
+        analysis_history = file_tracker.get_file_analysis_history(file_id, user_data['user_id'])
+        
+        if analysis_history:
+            # Get the most recent analysis
+            latest_analysis = analysis_history[0]
+            
+            # Reconstruct analysis results from stored data
+            st.session_state.analysis_results = latest_analysis.get('character_stats', {})
+            st.session_state.word_analysis_results = latest_analysis.get('word_stats', {})
+            st.session_state.uploaded_filename = file_data['filename']
+            st.session_state.current_file_id = file_id
+            
+            # Generate pronunciation data if needed
+            if not st.session_state.get('pronunciation_data'):
+                pronunciation_analyzer = PronunciationAnalyzer()
+                char_freq = latest_analysis.get('character_stats', {}).get('character_frequency', {})
+                word_freq = latest_analysis.get('word_stats', {}).get('han_words', {})
+                
+                character_pronunciations = pronunciation_analyzer.get_character_pronunciations(char_freq)
+                word_pronunciations = pronunciation_analyzer.get_word_pronunciations(word_freq)
+                
+                st.session_state.pronunciation_data = {
+                    'characters': character_pronunciations,
+                    'words': word_pronunciations
+                }
+            
+            st.success(f"✅ Loaded previous analysis of {file_data['filename']}")
+        else:
+            st.error("No analysis history found for this file.")
+    except Exception as e:
+        st.error(f"Error loading file: {str(e)}")
+
+
+def handle_file_reanalyze(file_id, file_data, user_data, db):
+    """Handle re-analyzing a previously uploaded file."""
+    try:
+        file_tracker = FileTracker()
+        file_content = file_tracker.get_file_content(file_id)
+        
+        if not file_content:
+            st.error("Original file content not available for re-analysis. Please upload the file again.")
+            return
+        
+        # Create a mock uploaded file object for processing
+        import io
+        
+        class MockUploadedFile:
+            def __init__(self, name, content, file_type, size):
+                self.name = name
+                self.type = file_type
+                self.size = size
+                self._content = content
+            
+            def getvalue(self):
+                return self._content
+        
+        mock_file = MockUploadedFile(
+            file_data['filename'],
+            file_content,
+            file_data.get('file_type', 'text/plain'),
+            file_data['file_size']
+        )
+        
+        # Get current user preferences
+        user_prefs = db.get_user_preferences(user_data['user_id'])
+        settings = {
+            'analysis_type': user_prefs.get('preferred_analysis_type', 'both').title(),
+            'min_frequency': user_prefs.get('min_frequency', 5),
+            'max_items_display': user_prefs.get('max_chars_display', 50),
+            'chart_type': user_prefs.get('show_chart_type', 'bar').title()
+        }
+        
+        st.info(f"Re-analyzing {file_data['filename']}...")
+        
+        # Process the file again
+        if process_uploaded_file(mock_file, settings, user_data, db):
+            st.success(f"✅ Re-analysis of {file_data['filename']} completed!")
+        else:
+            st.error("Failed to re-analyze the file.")
+            
+    except Exception as e:
+        st.error(f"Error re-analyzing file: {str(e)}")
+
+
+def display_comparison_interface(user_data, db):
+    """Display interface for comparing different analyses."""
+    st.header("🔄 Compare Analyses")
+    
+    file_tracker = FileTracker()
+    user_files = file_tracker.get_user_files(user_data['user_id'])
+    
+    if len(user_files) < 2:
+        st.warning("You need at least 2 analyzed files to compare. Upload more documents first.")
+        return
+    
+    # File selection for comparison
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📄 First File")
+        file1_options = {f"{f['filename']} ({f['uploaded_at'][:10]})": f['file_id'] for f in user_files}
+        selected_file1 = st.selectbox("Select first file:", options=list(file1_options.keys()), key="comp_file1")
+        file1_id = file1_options[selected_file1] if selected_file1 else None
+    
+    with col2:
+        st.subheader("📄 Second File")
+        file2_options = {f"{f['filename']} ({f['uploaded_at'][:10]})": f['file_id'] for f in user_files if f['file_id'] != file1_id}
+        selected_file2 = st.selectbox("Select second file:", options=list(file2_options.keys()), key="comp_file2")
+        file2_id = file2_options[selected_file2] if selected_file2 else None
+    
+    if file1_id and file2_id and st.button("📊 Compare Files"):
+        display_comparison_results(file1_id, file2_id, user_data, db)
+
+
+def display_comparison_results(file1_id, file2_id, user_data, db):
+    """Display comparison results between two files."""
+    file_tracker = FileTracker()
+    
+    # Get analysis history for both files
+    file1_history = file_tracker.get_file_analysis_history(file1_id, user_data['user_id'])
+    file2_history = file_tracker.get_file_analysis_history(file2_id, user_data['user_id'])
+    
+    if not file1_history or not file2_history:
+        st.error("Could not find analysis data for one or both files.")
+        return
+    
+    # Get the most recent analysis for each file
+    analysis1 = file1_history[0]
+    analysis2 = file2_history[0]
+    
+    file1_info = file_tracker.get_file_info(file1_id)
+    file2_info = file_tracker.get_file_info(file2_id)
+    
+    st.subheader("📊 Comparison Results")
+    
+    # File info comparison
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"**File 1:** {file1_info['filename']}")
+        st.write(f"**Characters:** {analysis1['character_stats']['total_chars']}")
+        st.write(f"**Words:** {analysis1['word_stats']['total_words']}")
+    
+    with col2:
+        st.write(f"**File 2:** {file2_info['filename']}")
+        st.write(f"**Characters:** {analysis2['character_stats']['total_chars']}")
+        st.write(f"**Words:** {analysis2['word_stats']['total_words']}")
+    
+    # Character comparison
+    st.subheader("🔤 Character Comparison")
+    
+    chars1 = set(analysis1['character_stats'].get('top_10_chars', {}).keys())
+    chars2 = set(analysis2['character_stats'].get('top_10_chars', {}).keys())
+    
+    common_chars = chars1 & chars2
+    unique_chars1 = chars1 - chars2
+    unique_chars2 = chars2 - chars1
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.write("**Common Characters**")
+        st.write(f"Count: {len(common_chars)}")
+        if common_chars:
+            st.write(", ".join(sorted(common_chars)))
+        else:
+            st.write("None")
+    
+    with col2:
+        st.write(f"**Unique to {file1_info['filename'][:15]}...**")
+        st.write(f"Count: {len(unique_chars1)}")
+        if unique_chars1:
+            st.write(", ".join(sorted(unique_chars1)))
+        else:
+            st.write("None")
+    
+    with col3:
+        st.write(f"**Unique to {file2_info['filename'][:15]}...**")
+        st.write(f"Count: {len(unique_chars2)}")
+        if unique_chars2:
+            st.write(", ".join(sorted(unique_chars2)))
+        else:
+            st.write("None")
+    
+    # Word comparison
+    st.subheader("📝 Word Comparison")
+    
+    words1 = set(analysis1['word_stats'].get('top_10_words', {}).keys())
+    words2 = set(analysis2['word_stats'].get('top_10_words', {}).keys())
+    
+    common_words = words1 & words2
+    unique_words1 = words1 - words2
+    unique_words2 = words2 - words1
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.write("**Common Words**")
+        st.write(f"Count: {len(common_words)}")
+        if common_words:
+            st.write(", ".join(sorted(common_words)))
+        else:
+            st.write("None")
+    
+    with col2:
+        st.write(f"**Unique to {file1_info['filename'][:15]}...**")
+        st.write(f"Count: {len(unique_words1)}")
+        if unique_words1:
+            st.write(", ".join(sorted(unique_words1)))
+        else:
+            st.write("None")
+    
+    with col3:
+        st.write(f"**Unique to {file2_info['filename'][:15]}...**")
+        st.write(f"Count: {len(unique_words2)}")
+        if unique_words2:
+            st.write(", ".join(sorted(unique_words2)))
+        else:
+            st.write("None")
+    
+    # Similarity metrics
+    st.subheader("📈 Similarity Metrics")
+    
+    char_jaccard = len(common_chars) / len(chars1 | chars2) if chars1 | chars2 else 0
+    word_jaccard = len(common_words) / len(words1 | words2) if words1 | words2 else 0
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Character Similarity", f"{char_jaccard:.2%}")
+    with col2:
+        st.metric("Word Similarity", f"{word_jaccard:.2%}")
+
+
 def main_analysis_page():
     """Main analysis page function."""
     # Check if user is authenticated
@@ -668,6 +977,26 @@ def main_analysis_page():
     
     # Display header
     display_analysis_header(user_data)
+    
+    # Handle file reload/reanalyze requests
+    if st.session_state.get('reload_file_id'):
+        handle_file_reload(st.session_state.reload_file_id, st.session_state.reload_file_data, user_data, db)
+        st.session_state.reload_file_id = None
+        st.session_state.reload_file_data = None
+    
+    if st.session_state.get('reanalyze_file_id'):
+        handle_file_reanalyze(st.session_state.reanalyze_file_id, st.session_state.reanalyze_file_data, user_data, db)
+        st.session_state.reanalyze_file_id = None
+        st.session_state.reanalyze_file_data = None
+    
+    # Add comparison feature button
+    if st.button("🔄 Compare Analyses"):
+        st.session_state.show_comparison = not st.session_state.get('show_comparison', False)
+        st.rerun()
+    
+    if st.session_state.get('show_comparison'):
+        display_comparison_interface(user_data, db)
+        return True
     
     # Main content in columns
     col1, col2 = st.columns([1, 2])

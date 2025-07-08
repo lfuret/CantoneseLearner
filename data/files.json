@@ -1,0 +1,178 @@
+{
+  "965a2fff-bcf": {
+    "file_id": "965a2fff-bcf",
+    "filename": "The little prince in Cantonese.epub",
+    "file_hash": "97a418f13f2907ea",
+    "file_size": 3144850,
+    "file_type": "application/epub+zip",
+    "uploaded_by": "c43bc13b28cc",
+    "uploaded_at": "2025-07-08T21:19:09.861727",
+    "last_accessed": "2025-07-08T21:22:32.593149",
+    "access_count": 2,
+    "accessed_by": [
+      "c43bc13b28cc",
+      "deab7f9cc90e"
+    ],
+    "analysis_history": [
+      {
+        "analysis_id": "15c1d74e",
+        "user_id": "c43bc13b28cc",
+        "timestamp": "2025-07-08T21:19:15.986656",
+        "analysis_type": "both",
+        "settings_used": {
+          "preferred_analysis_type": "both",
+          "min_frequency": 1,
+          "max_chars_display": 50,
+          "show_chart_type": "bar chart"
+        },
+        "character_stats": {
+          "total_chars": 26119,
+          "unique_chars": 1628,
+          "top_10_chars": {
+            "我": 751,
+            "一": 607,
+            "佢": 606,
+            "嘅": 582,
+            "係": 556,
+            "好": 432,
+            "個": 371,
+            "你": 370,
+            "唔": 331,
+            "有": 300
+          }
+        },
+        "word_stats": {
+          "total_words": 24401,
+          "unique_words": 3998,
+          "han_words_count": 3585,
+          "top_10_words": {
+            "我": 613,
+            "佢": 606,
+            "嘅": 582,
+            "係": 556,
+            "唔": 326,
+            "你": 315,
+            "都": 274,
+            "就": 269,
+            "好": 242,
+            "噉": 242
+          }
+        }
+      },
+      {
+        "analysis_id": "e4ab9dfb",
+        "user_id": "deab7f9cc90e",
+        "timestamp": "2025-07-08T21:22:32.593126",
+        "analysis_type": "both",
+        "settings_used": {
+          "preferred_analysis_type": "both",
+          "min_frequency": 1,
+          "max_chars_display": 50,
+          "show_chart_type": "bar chart"
+        },
+        "character_stats": {
+          "total_chars": 26119,
+          "unique_chars": 1628,
+          "top_10_chars": {
+            "我": 751,
+            "一": 607,
+            "佢": 606,
+            "嘅": 582,
+            "係": 556,
+            "好": 432,
+            "個": 371,
+            "你": 370,
+            "唔": 331,
+            "有": 300
+          }
+        },
+        "word_stats": {
+          "total_words": 24401,
+          "unique_words": 3998,
+          "han_words_count": 3585,
+          "top_10_words": {
+            "我": 613,
+            "佢": 606,
+            "嘅": 582,
+            "係": 556,
+            "唔": 326,
+            "你": 315,
+            "都": 274,
+            "就": 269,
+            "好": 242,
+            "噉": 242
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "original_filename": "The little prince in Cantonese.epub",
+      "upload_session": "662a7998"
+    }
+  },
+  "995d8ee8-d8e": {
+    "file_id": "995d8ee8-d8e",
+    "filename": "the_little_prince_yue.txt",
+    "file_hash": "6c14657a7367ea94",
+    "file_size": 81701,
+    "file_type": "text/plain",
+    "uploaded_by": "c43bc13b28cc",
+    "uploaded_at": "2025-07-08T21:20:00.658611",
+    "last_accessed": "2025-07-08T21:20:03.298444",
+    "access_count": 1,
+    "accessed_by": [
+      "c43bc13b28cc"
+    ],
+    "analysis_history": [
+      {
+        "analysis_id": "a0a06a63",
+        "user_id": "c43bc13b28cc",
+        "timestamp": "2025-07-08T21:20:03.298426",
+        "analysis_type": "both",
+        "settings_used": {
+          "preferred_analysis_type": "both",
+          "min_frequency": 1,
+          "max_chars_display": 50,
+          "show_chart_type": "bar chart"
+        },
+        "character_stats": {
+          "total_chars": 22607,
+          "unique_chars": 1414,
+          "top_10_chars": {
+            "我": 713,
+            "佢": 601,
+            "嘅": 559,
+            "一": 548,
+            "係": 541,
+            "好": 412,
+            "你": 360,
+            "個": 342,
+            "唔": 321,
+            "就": 290
+          }
+        },
+        "word_stats": {
+          "total_words": 20830,
+          "unique_words": 2924,
+          "han_words_count": 2863,
+          "top_10_words": {
+            "佢": 601,
+            "我": 588,
+            "嘅": 559,
+            "係": 541,
+            "唔": 316,
+            "你": 305,
+            "就": 262,
+            "都": 260,
+            "噉": 234,
+            "好": 233
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "original_filename": "the_little_prince_yue.txt",
+      "upload_session": "4ad7c897"
+    }
+  }
+}
