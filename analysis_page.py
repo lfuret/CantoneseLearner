@@ -16,6 +16,8 @@ from character_analyzer import CharacterAnalyzer
 from word_analyzer import WordAnalyzer
 from pronunciation_analyzer import PronunciationAnalyzer
 from user_database import UserDatabase
+from file_tracker import FileTracker
+from learning_tracker import LearningTracker
 
 
 def display_analysis_header(user_data):
@@ -135,12 +137,31 @@ def display_analysis_settings(user_prefs):
 def process_uploaded_file(uploaded_file, settings, user_data, db):
     """Process the uploaded file and perform analysis."""
     
-    # Check if this is a new file
-    if st.session_state.get('uploaded_filename') != uploaded_file.name:
+    # Initialize trackers
+    file_tracker = FileTracker()
+    learning_tracker = LearningTracker()
+    
+    # Check if this is a new file or if we need to reprocess
+    file_content = uploaded_file.getvalue()
+    current_file_key = f"{uploaded_file.name}_{len(file_content)}"
+    
+    if st.session_state.get('uploaded_file_key') != current_file_key:
+        st.session_state.uploaded_file_key = current_file_key
         st.session_state.uploaded_filename = uploaded_file.name
         st.session_state.analysis_results = None
         st.session_state.word_analysis_results = None
         st.session_state.pronunciation_data = None
+        st.session_state.current_file_id = None
+        
+        # Register file in tracker
+        file_id = file_tracker.register_file(
+            uploaded_file.name,
+            file_content,
+            user_data['user_id'],
+            uploaded_file.size,
+            uploaded_file.type
+        )
+        st.session_state.current_file_id = file_id
         
         # Create progress container
         progress_container = st.container()
@@ -152,13 +173,13 @@ def process_uploaded_file(uploaded_file, settings, user_data, db):
             try:
                 # Step 1: Parse file
                 status_text.text("📄 Parsing file...")
-                progress_bar.progress(20)
+                progress_bar.progress(15)
                 
                 parser = FileParser()
                 
                 # Create temporary file
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
-                    tmp_file.write(uploaded_file.getvalue())
+                    tmp_file.write(file_content)
                     tmp_file_path = tmp_file.name
                 
                 try:
@@ -171,7 +192,7 @@ def process_uploaded_file(uploaded_file, settings, user_data, db):
                     
                     # Step 2: Character analysis
                     status_text.text("🔤 Analyzing characters...")
-                    progress_bar.progress(40)
+                    progress_bar.progress(35)
                     
                     analyzer = CharacterAnalyzer()
                     analysis_results = analyzer.analyze_text(text_content)
@@ -179,7 +200,7 @@ def process_uploaded_file(uploaded_file, settings, user_data, db):
                     
                     # Step 3: Word analysis
                     status_text.text("📝 Analyzing words...")
-                    progress_bar.progress(60)
+                    progress_bar.progress(55)
                     
                     word_analyzer = WordAnalyzer()
                     word_analysis_results = word_analyzer.analyze_text(text_content)
@@ -187,7 +208,7 @@ def process_uploaded_file(uploaded_file, settings, user_data, db):
                     
                     # Step 4: Pronunciation analysis
                     status_text.text("🗣️ Analyzing pronunciations...")
-                    progress_bar.progress(80)
+                    progress_bar.progress(75)
                     
                     pronunciation_analyzer = PronunciationAnalyzer()
                     character_pronunciations = pronunciation_analyzer.get_character_pronunciations(
@@ -202,9 +223,21 @@ def process_uploaded_file(uploaded_file, settings, user_data, db):
                         'words': word_pronunciations
                     }
                     
-                    # Step 5: Save to database
+                    # Step 5: Track learning progress
+                    status_text.text("📚 Tracking learning progress...")
+                    progress_bar.progress(85)
+                    
+                    learning_tracker.track_exposure(
+                        user_data['user_id'],
+                        dict(analysis_results['character_frequency']),
+                        dict(word_analysis_results['han_words']),
+                        file_id,
+                        uploaded_file.name
+                    )
+                    
+                    # Step 6: Save to database
                     status_text.text("💾 Saving analysis...")
-                    progress_bar.progress(100)
+                    progress_bar.progress(95)
                     
                     # Save analysis results
                     analysis_data = {
@@ -224,18 +257,20 @@ def process_uploaded_file(uploaded_file, settings, user_data, db):
                     }
                     
                     db.save_analysis_result(user_data['user_id'], analysis_data)
+                    file_tracker.add_analysis_record(file_id, user_data['user_id'], analysis_data)
                     
                     # Update user preferences
                     db.update_user_preferences(user_data['user_id'], analysis_data['settings_used'])
                     
                     status_text.text("✅ Analysis complete!")
+                    progress_bar.progress(100)
                     
                     # Clear progress after a moment
                     import time
                     time.sleep(1)
                     progress_container.empty()
                     
-                    st.success("🎉 Analysis completed successfully! Results saved to your progress.")
+                    st.success("🎉 Analysis completed successfully! File tracked and learning progress updated.")
                     
                 finally:
                     # Clean up temporary file
@@ -246,6 +281,152 @@ def process_uploaded_file(uploaded_file, settings, user_data, db):
                 return False
     
     return True
+
+
+def display_learning_progress():
+    """Display learning progress and file history."""
+    st.header("📚 Your Learning Progress")
+    
+    if 'current_user' not in st.session_state:
+        st.error("User session not found.")
+        return
+    
+    user_data = st.session_state.current_user
+    learning_tracker = LearningTracker()
+    file_tracker = FileTracker()
+    
+    # Get learning progress
+    progress = learning_tracker.get_user_progress(user_data['user_id'])
+    
+    # Display progress metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric(
+            "Characters Learned", 
+            progress['character_stats']['total_characters_seen'],
+            help="Total unique characters you've encountered"
+        )
+    
+    with col2:
+        st.metric(
+            "Words Learned", 
+            progress['word_stats']['total_words_seen'],
+            help="Total unique words you've encountered"
+        )
+    
+    with col3:
+        st.metric(
+            "Total Exposures", 
+            progress['total_exposures'],
+            help="Number of analysis sessions completed"
+        )
+    
+    with col4:
+        st.metric(
+            "Files Analyzed", 
+            progress['unique_files'],
+            help="Number of different files you've analyzed"
+        )
+    
+    # Mastery level breakdown
+    st.subheader("🎯 Mastery Levels")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Character Mastery**")
+        char_mastery = progress['character_stats']['mastery_breakdown']
+        if char_mastery:
+            mastery_df = pd.DataFrame([
+                {'Level': level.title(), 'Count': count}
+                for level, count in char_mastery.items()
+            ])
+            fig = px.pie(mastery_df, values='Count', names='Level', title="Character Mastery Distribution")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No character mastery data yet.")
+    
+    with col2:
+        st.write("**Word Mastery**")
+        word_mastery = progress['word_stats']['mastery_breakdown']
+        if word_mastery:
+            mastery_df = pd.DataFrame([
+                {'Level': level.title(), 'Count': count}
+                for level, count in word_mastery.items()
+            ])
+            fig = px.pie(mastery_df, values='Count', names='Level', title="Word Mastery Distribution")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No word mastery data yet.")
+    
+    # Recent learning sessions
+    st.subheader("📈 Recent Learning Sessions")
+    recent_sessions = progress['recent_sessions']
+    
+    if recent_sessions:
+        sessions_df = pd.DataFrame([
+            {
+                'Date': session['timestamp'][:10],
+                'Time': session['timestamp'][11:19],
+                'File': session['filename'],
+                'Characters': session['characters_encountered'],
+                'Words': session['words_encountered'],
+                'New Characters': session['new_characters'],
+                'New Words': session['new_words']
+            }
+            for session in recent_sessions
+        ])
+        st.dataframe(sessions_df, use_container_width=True)
+    else:
+        st.info("No learning sessions recorded yet.")
+    
+    # Learning recommendations
+    st.subheader("💡 Learning Recommendations")
+    recommendations = learning_tracker.get_learning_recommendations(user_data['user_id'])
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Characters to Focus On**")
+        if recommendations['characters']:
+            for i, char in enumerate(recommendations['characters'][:10], 1):
+                st.write(f"{i}. {char}")
+        else:
+            st.info("Keep analyzing more documents to get recommendations!")
+    
+    with col2:
+        st.write("**Words to Focus On**")
+        if recommendations['words']:
+            for i, word in enumerate(recommendations['words'][:10], 1):
+                st.write(f"{i}. {word}")
+        else:
+            st.info("Keep analyzing more documents to get recommendations!")
+    
+    # File history
+    st.subheader("📂 Your File History")
+    user_files = file_tracker.get_user_files(user_data['user_id'])
+    
+    if user_files:
+        with st.expander("View File Details", expanded=False):
+            for file_data in user_files[:10]:  # Show last 10 files
+                col1, col2, col3 = st.columns([2, 1, 1])
+                
+                with col1:
+                    st.write(f"**{file_data['filename']}**")
+                    st.caption(f"First analyzed: {file_data['uploaded_at'][:10]}")
+                
+                with col2:
+                    st.write(f"Size: {file_data['file_size']:,} bytes")
+                    st.write(f"Analyses: {len(file_data['analysis_history'])}")
+                
+                with col3:
+                    st.write(f"Last accessed: {file_data['last_accessed'][:10]}")
+                    st.write(f"Access count: {file_data['access_count']}")
+                
+                st.divider()
+    else:
+        st.info("No files analyzed yet. Upload a document to start building your learning history!")
 
 
 def display_analysis_results(settings):
@@ -265,7 +446,7 @@ def display_analysis_results(settings):
     
     # Create tabs for different analysis views
     if settings['analysis_type'] == "Both":
-        tab1, tab2, tab3 = st.tabs(["📊 Overview", "🔤 Characters", "📝 Words"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "🔤 Characters", "📝 Words", "📚 Learning Progress"])
         
         with tab1:
             display_overview_analysis(char_results, word_results, pronunciation_data, settings)
@@ -275,12 +456,23 @@ def display_analysis_results(settings):
         
         with tab3:
             display_word_analysis(word_results, pronunciation_data['words'], settings)
+        
+        with tab4:
+            display_learning_progress()
     
     elif settings['analysis_type'] == "Characters":
-        display_character_analysis(char_results, pronunciation_data['characters'], settings)
+        tab1, tab2 = st.tabs(["🔤 Character Analysis", "📚 Learning Progress"])
+        with tab1:
+            display_character_analysis(char_results, pronunciation_data['characters'], settings)
+        with tab2:
+            display_learning_progress()
     
     else:  # Words
-        display_word_analysis(word_results, pronunciation_data['words'], settings)
+        tab1, tab2 = st.tabs(["📝 Word Analysis", "📚 Learning Progress"])
+        with tab1:
+            display_word_analysis(word_results, pronunciation_data['words'], settings)
+        with tab2:
+            display_learning_progress()
 
 
 def display_overview_analysis(char_results, word_results, pronunciation_data, settings):

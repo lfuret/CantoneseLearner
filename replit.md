@@ -73,6 +73,27 @@ The application follows a modular, single-page web application architecture with
   - User session management
 - **Data Structure**: Hierarchical JSON with user profiles and analysis records
 
+### 7. File Tracker Module (`file_tracker.py`)
+- **Purpose**: Tracks uploaded files and maintains detailed analysis history
+- **File Management Features**:
+  - File deduplication using content hashing
+  - Multiple user access tracking per file
+  - Detailed file metadata (size, type, upload date)
+  - Analysis history per file with timestamps
+  - User access patterns and frequency tracking
+- **Storage**: JSON-based file registry with comprehensive metadata
+
+### 8. Learning Tracker Module (`learning_tracker.py`)
+- **Purpose**: Tracks individual character and word learning progress
+- **Learning Features**:
+  - Character exposure frequency across multiple files
+  - Word exposure tracking with context
+  - Mastery level categorization (beginner, learning, familiar, mastered)
+  - Learning session history with progress metrics
+  - Personalized learning recommendations
+  - Cross-file learning pattern analysis
+- **Mastery System**: Dynamic leveling based on exposure frequency and file diversity
+
 ## Data Flow
 
 1. **User Authentication**: User signs in or creates account through authentication interface
@@ -125,6 +146,8 @@ Preferred communication style: Simple, everyday language.
 - July 08, 2025: Enhanced UI with progress dashboard and user session management
 - July 08, 2025: Refactored analysis page with improved modular design and better error handling
 - July 08, 2025: Fixed preference mapping issues and created cleaner UI layout with progress indicators
+- July 08, 2025: Added comprehensive file tracking and learning progress system
+- July 08, 2025: Implemented mastery-based learning recommendations and detailed exposure tracking
 
 ## Changelog
 
