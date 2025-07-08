@@ -28,8 +28,11 @@ def display_character_analysis(results, pronunciation_data, min_frequency, max_c
         if count >= min_frequency
     }
     
-    # Limit the number of characters displayed
-    top_chars = dict(sorted(filtered_chars.items(), key=lambda x: x[1], reverse=True)[:max_chars_display])
+    # Limit the number of characters displayed if specified
+    if max_chars_display is not None:
+        top_chars = dict(sorted(filtered_chars.items(), key=lambda x: x[1], reverse=True)[:max_chars_display])
+    else:
+        top_chars = dict(sorted(filtered_chars.items(), key=lambda x: x[1], reverse=True))
     
     if not top_chars:
         st.warning(f"No characters found with frequency >= {min_frequency}. Try lowering the minimum frequency.")
@@ -65,8 +68,11 @@ def display_word_analysis(word_results, pronunciation_data, min_frequency, max_c
         if count >= min_frequency
     }
     
-    # Limit the number of words displayed
-    top_words = dict(sorted(filtered_words.items(), key=lambda x: x[1], reverse=True)[:max_chars_display])
+    # Limit the number of words displayed if specified
+    if max_chars_display is not None:
+        top_words = dict(sorted(filtered_words.items(), key=lambda x: x[1], reverse=True)[:max_chars_display])
+    else:
+        top_words = dict(sorted(filtered_words.items(), key=lambda x: x[1], reverse=True))
     
     if not top_words:
         st.warning(f"No words found with frequency >= {min_frequency}. Try lowering the minimum frequency.")
@@ -135,8 +141,8 @@ def display_frequency_chart_and_table_with_pronunciation(top_items, pronunciatio
             fig.update_layout(xaxis_tickangle=-45)
             
         elif show_chart_type == "Pie Chart":
-            # Show only top 20 for pie chart to avoid clutter
-            df_pie = df_plot.head(20)
+            # Show only top 30 for pie chart to avoid clutter
+            df_pie = df_plot.head(30)
             fig = px.pie(
                 df_pie, 
                 values='Frequency', 
@@ -163,14 +169,17 @@ def display_frequency_chart_and_table_with_pronunciation(top_items, pronunciatio
         for item, freq in top_items.items():
             percentage = (freq / total_count) * 100
             
-            # Get pronunciation data if available
+            # Get pronunciation and type data if available
             if item in pronunciation_data:
                 jyutping = pronunciation_data[item]['jyutping']
+                char_type = pronunciation_data[item]['type']
             else:
                 jyutping = "unknown"
+                char_type = "unknown"
             
             table_data.append({
                 item_type: item,
+                'Type': char_type.capitalize(),
                 'Jyutping': jyutping,
                 'Frequency': freq,
                 'Percentage': f"{percentage:.1f}%"
@@ -194,17 +203,24 @@ def display_download_section(char_results, word_results, pronunciation_data, ana
     col_download1, col_download2 = st.columns(2)
     
     if analysis_type == "Characters":
-        # Character analysis download
-        top_chars = dict(sorted(char_results['character_frequency'].items(), key=lambda x: x[1], reverse=True)[:50])
+        # Character analysis download - all characters that meet minimum frequency
+        all_chars = {
+            char: count for char, count in char_results['character_frequency'].items()
+            if count >= min_frequency
+        }
+        top_chars = dict(sorted(all_chars.items(), key=lambda x: x[1], reverse=True))
         
         with col_download1:
             # Create CSV with pronunciation data
             csv_data_list = []
             for char, freq in top_chars.items():
-                jyutping = pronunciation_data['characters'].get(char, {}).get('jyutping', 'unknown')
+                char_data = pronunciation_data['characters'].get(char, {})
+                jyutping = char_data.get('jyutping', 'unknown')
+                char_type = char_data.get('type', 'unknown')
                 percentage = (freq / char_results['total_chars'] * 100)
                 csv_data_list.append({
                     'Character': char,
+                    'Type': char_type.capitalize(),
                     'Jyutping': jyutping,
                     'Frequency': freq,
                     'Percentage': round(percentage, 1)
@@ -233,8 +249,10 @@ Top {len(top_chars)} Most Frequent Characters:
 """
             for i, (char, freq) in enumerate(top_chars.items(), 1):
                 percentage = (freq / char_results['total_chars']) * 100
-                jyutping = pronunciation_data['characters'].get(char, {}).get('jyutping', 'unknown')
-                summary_text += f"{i:3d}. {char} ({jyutping}) - {freq:4d} times ({percentage:5.1f}%)\n"
+                char_data = pronunciation_data['characters'].get(char, {})
+                jyutping = char_data.get('jyutping', 'unknown')
+                char_type = char_data.get('type', 'unknown')
+                summary_text += f"{i:3d}. {char} [{char_type}] ({jyutping}) - {freq:4d} times ({percentage:5.1f}%)\n"
             
             st.download_button(
                 label="📝 Download Character Summary",
@@ -244,17 +262,24 @@ Top {len(top_chars)} Most Frequent Characters:
             )
     
     elif analysis_type == "Words":
-        # Word analysis download
-        top_words = dict(sorted(word_results['han_words'].items(), key=lambda x: x[1], reverse=True)[:50])
+        # Word analysis download - all words that meet minimum frequency
+        all_words = {
+            word: count for word, count in word_results['han_words'].items()
+            if count >= min_frequency
+        }
+        top_words = dict(sorted(all_words.items(), key=lambda x: x[1], reverse=True))
         
         with col_download1:
             # Create CSV with pronunciation data
             csv_data_list = []
             for word, freq in top_words.items():
-                jyutping = pronunciation_data['words'].get(word, {}).get('jyutping', 'unknown')
+                word_data = pronunciation_data['words'].get(word, {})
+                jyutping = word_data.get('jyutping', 'unknown')
+                word_type = word_data.get('type', 'unknown')
                 percentage = (freq / word_results['total_words'] * 100)
                 csv_data_list.append({
                     'Word': word,
+                    'Type': word_type.capitalize(),
                     'Jyutping': jyutping,
                     'Frequency': freq,
                     'Percentage': round(percentage, 1)
@@ -283,8 +308,10 @@ Top {len(top_words)} Most Frequent Words:
 """
             for i, (word, freq) in enumerate(top_words.items(), 1):
                 percentage = (freq / word_results['total_words']) * 100
-                jyutping = pronunciation_data['words'].get(word, {}).get('jyutping', 'unknown')
-                summary_text += f"{i:3d}. {word} ({jyutping}) - {freq:4d} times ({percentage:5.1f}%)\n"
+                word_data = pronunciation_data['words'].get(word, {})
+                jyutping = word_data.get('jyutping', 'unknown')
+                word_type = word_data.get('type', 'unknown')
+                summary_text += f"{i:3d}. {word} [{word_type}] ({jyutping}) - {freq:4d} times ({percentage:5.1f}%)\n"
             
             st.download_button(
                 label="📝 Download Word Summary",
@@ -298,8 +325,12 @@ Top {len(top_words)} Most Frequent Words:
         col_download3, col_download4 = st.columns(2)
         
         with col_download1:
-            # Character CSV with pronunciation
-            top_chars = dict(sorted(char_results['character_frequency'].items(), key=lambda x: x[1], reverse=True)[:50])
+            # Character CSV with pronunciation - all characters that meet minimum frequency
+            all_chars = {
+                char: count for char, count in char_results['character_frequency'].items()
+                if count >= min_frequency
+            }
+            top_chars = dict(sorted(all_chars.items(), key=lambda x: x[1], reverse=True))
             csv_data_list = []
             for char, freq in top_chars.items():
                 jyutping = pronunciation_data['characters'].get(char, {}).get('jyutping', 'unknown')
@@ -323,8 +354,12 @@ Top {len(top_words)} Most Frequent Words:
             )
         
         with col_download2:
-            # Word CSV with pronunciation
-            top_words = dict(sorted(word_results['han_words'].items(), key=lambda x: x[1], reverse=True)[:50])
+            # Word CSV with pronunciation - all words that meet minimum frequency
+            all_words = {
+                word: count for word, count in word_results['han_words'].items()
+                if count >= min_frequency
+            }
+            top_words = dict(sorted(all_words.items(), key=lambda x: x[1], reverse=True))
             csv_data_list = []
             for word, freq in top_words.items():
                 jyutping = pronunciation_data['words'].get(word, {}).get('jyutping', 'unknown')
@@ -383,13 +418,22 @@ def main():
             help="Only show characters that appear at least this many times"
         )
         
-        max_chars_display = st.slider(
-            "Maximum characters to display",
-            min_value=10,
-            max_value=200,
-            value=50,
-            help="Limit the number of characters shown in results"
+        show_all_results = st.checkbox(
+            "Show all results",
+            value=True,
+            help="Show all characters/words or limit to top 50"
         )
+        
+        if not show_all_results:
+            max_chars_display = st.slider(
+                "Maximum items to display",
+                min_value=10,
+                max_value=200,
+                value=50,
+                help="Limit the number of items shown in results"
+            )
+        else:
+            max_chars_display = None
         
         show_chart_type = st.selectbox(
             "Chart type",

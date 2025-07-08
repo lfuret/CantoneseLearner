@@ -1,4 +1,5 @@
 import pycantonese
+import hanzidentifier
 from typing import Dict, List, Tuple, Any
 import re
 
@@ -9,6 +10,31 @@ class PronunciationAnalyzer:
         """Initialize the pronunciation analyzer."""
         self.han_pattern = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+')
         
+    def _identify_character_type(self, text: str) -> str:
+        """
+        Identify whether a character or text is traditional, simplified, or mixed.
+        
+        Args:
+            text: Character or text to analyze
+            
+        Returns:
+            String indicating character type: 'traditional', 'simplified', 'both', 'mixed', or 'unknown'
+        """
+        if not hanzidentifier.has_chinese(text):
+            return 'unknown'
+        
+        identification = hanzidentifier.identify(text)
+        
+        if identification == hanzidentifier.TRADITIONAL:
+            return 'traditional'
+        elif identification == hanzidentifier.SIMPLIFIED:
+            return 'simplified'
+        elif identification == hanzidentifier.BOTH:
+            return 'both'
+        elif identification == hanzidentifier.MIXED:
+            return 'mixed'
+        else:
+            return 'unknown'
     def get_character_pronunciations(self, char_frequency: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
         """
         Get Jyutping pronunciations for characters.
@@ -38,7 +64,8 @@ class PronunciationAnalyzer:
             character_data[char] = {
                 'frequency': freq,
                 'jyutping': jyutping,
-                'character': char
+                'character': char,
+                'type': self._identify_character_type(char)
             }
         
         return character_data
@@ -82,7 +109,8 @@ class PronunciationAnalyzer:
                 'frequency': freq,
                 'jyutping': jyutping,
                 'word': word,
-                'length': len(word)
+                'length': len(word),
+                'type': self._identify_character_type(word)
             }
         
         return word_data

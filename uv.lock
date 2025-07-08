@@ -250,6 +250,18 @@ wheels = [
 ]
 
 [[package]]
+name = "hanzidentifier"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "zhon" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cb/32/c1f5f7cf4d4372c7778e34f116c52539db717b73e1ec0b149ce3717b1c9c/hanzidentifier-1.3.0.tar.gz", hash = "sha256:7acd99ef00c69ab57f3441e2b3568348b58ef115500e5a01f66cedea603b3101", size = 3890 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/f6/94c3975b5e06ea4084056413da975395924ff0ddd89e975427bd46684359/hanzidentifier-1.3.0-py3-none-any.whl", hash = "sha256:8e36204a96072c328c8bc6ae9342fc6f9faea10bc519ff51da3ef6e6e0cee5a6", size = 4777 },
+]
+
+[[package]]
 name = "html2text"
 version = "2025.4.15"
 source = { registry = "https://pypi.org/simple" }
@@ -832,6 +844,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "ebooklib" },
+    { name = "hanzidentifier" },
     { name = "html2text" },
     { name = "jieba" },
     { name = "pandas" },
@@ -845,6 +858,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "ebooklib", specifier = ">=0.19" },
+    { name = "hanzidentifier", specifier = ">=1.3.0" },
     { name = "html2text", specifier = ">=2025.4.15" },
     { name = "jieba", specifier = ">=0.42.1" },
     { name = "pandas", specifier = ">=2.3.1" },
@@ -1130,4 +1144,13 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/3e/a5/e5948fd098b5085b14830a9586d51b0f00c44a0717f06d7a9eb05511d847/wordseg-0.0.2.tar.gz", hash = "sha256:0e23afad01eaa36acb85524e1469a68f65d29bd41e1114cebfe39135e9e951d9", size = 7406 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dd/23/ceeb960b12098d8ca9d9a246f5ac2081b135574f406bf433593b5972f0ec/wordseg-0.0.2-py3-none-any.whl", hash = "sha256:488e73c193ed9e36e844fef41658217f7c10e36a1d0123304e85ff1232477235", size = 9522 },
+]
+
+[[package]]
+name = "zhon"
+version = "2.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2a/8d/e6c8ee4df75940ddecb6f5e7b2753a9a3914e6cd357e7238987661723d81/zhon-2.1.1.tar.gz", hash = "sha256:c8da424fad4aa698ddd3e1735515b49ff522c84dd1091e8fafd986ac7c6898f0", size = 84448 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/be/13/b8d6ca3a41bf5959bc3915678837385bf668162a7295140d81ccae0b96b7/zhon-2.1.1-py3-none-any.whl", hash = "sha256:9ec0d42229ae60708a045270f755ccefb48f2689f2a6ce0bc6597abf6c4a9871", size = 83933 },
 ]
