@@ -99,9 +99,16 @@ The application is designed for straightforward deployment in containerized or c
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+- July 08, 2025: Successfully migrated from Replit Agent to Replit environment
+- July 08, 2025: Configured Streamlit server settings for proper deployment (port 5000, headless mode)
+- July 08, 2025: Installed all required dependencies and verified application functionality
+
 ## Changelog
 
 Changelog:
 - July 08, 2025. Initial setup
 - July 08, 2025. Added Chinese word segmentation analysis using Jieba library alongside existing character analysis
 - July 08, 2025. Added Jyutping pronunciation support using PyCantonese library for both characters and words
+- July 08, 2025. Completed migration to Replit environment with proper security configuration
